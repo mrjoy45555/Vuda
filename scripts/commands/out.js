@@ -1,14 +1,13 @@
-module.exports = {
-  config: {
+module.exports.config = {
     name: "out",
-  version: "1.0.5",
-  credits: "Joy",
-  prefix: false,
-  permission: 2,
-  description: "out bot",
-  category: "admin",
-  cooldowns: 5
-},
+    version: "1.0.0",
+    hasPermssion: 2,
+    credits: "JOY",
+    description: "Leave the group",
+    commandCategory: "Admin",
+    usages: "out [id]",
+    cooldowns: 10,
+};
 
 module.exports.run = async function({ api, event, args }) {
         if (!args[0]) return api.removeUserFromGroup(api.getCurrentUserID(), event.threadID);
