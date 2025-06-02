@@ -10,9 +10,7 @@ module.exports = {
   cooldowns: 5
 },
 
-start: async function({ nayan, events, args }) {
-        if (!args[0]) return nayan.removeUserFromGroup(nayan.getCurrentUserID(), events.threadID);
-  nayan.reply("gd bye", events.threadID)
-        if (!isNaN(args[0])) return nayan.removeUserFromGroup(nayan.getCurrentUserID(), args.join(" "));
-}
+module.exports.run = async function({ api, event, args }) {
+        if (!args[0]) return api.removeUserFromGroup(api.getCurrentUserID(), event.threadID);
+        if (!isNaN(args[0])) return api.removeUserFromGroup(api.getCurrentUserID(), args.join(" "));
 }
