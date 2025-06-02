@@ -1,12 +1,14 @@
 module.exports.config = {
-  name: "settings",
-  version: "0.0.1",
-  hasPermssion: 2,
-  credits: "JOY",
-  description: "xem thông tin về bot",
-  commandCategory: "Dành cho admin",
-  usages: "",
-  cooldowns: 0
+   name: "settings",
+    version: "1.0.0",
+    permission: 2,
+    credits: "Nayan",
+    description: "",
+    prefix: true,
+    category: "admin",
+    usages: "",
+    cooldowns: 10,
+    
 };
 const totalPath = __dirname + '/cache/totalChat.json';
 const _24hours = 86400000;
