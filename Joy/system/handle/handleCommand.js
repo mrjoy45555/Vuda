@@ -8,7 +8,7 @@ module.exports = function({ api, models, Users, Threads, Currencies }) {
     const dateNow = Date.now()
     const time = moment.tz("Asia/Manila").format("HH:MM:ss DD/MM/YYYY");
     const { allowInbox, adminOnly, keyAdminOnly } = global.ryuko;
-    const { PREFIX, ADMINBOT, developermode, OPERATOR, approval, OWNER } = global.config;
+    const { PREFIX, ADMINBOT, developermode, OPERATOR, approval } = global.config;
     const { APPROVED } = global.approved;
     const { userBanned, threadBanned, threadInfo, threadData, commandBanned } = global.data;
     const { commands, cooldowns } = global.client;
@@ -40,19 +40,19 @@ module.exports = function({ api, models, Users, Threads, Currencies }) {
         return api.sendMessage(`📬 𝗥𝗲𝗾𝘂𝗲𝘀𝘁 𝗔𝗽𝗽𝗿𝗼𝘃𝗮𝗹\n${global.line}\nYour approval request has been sent from bot operator`, threadID, messageID);
       });
     }
-    if (command && (command.config.name.toLowerCase() === commandName.toLowerCase()) &&(!APPROVED.includes(threadID) && !OPERATOR.includes(senderID) && !ADMINBOT.includes(senderID) && !OWNER.includes(senderID) && approval)) {
+    if (command && (command.config.name.toLowerCase() === commandName.toLowerCase()) &&(!APPROVED.includes(threadID) && !OPERATOR.includes(senderID) && !ADMINBOT.includes(senderID) && approval)) {
       return api.sendMessage(notApproved, threadID, async (err, info) => {
             await new Promise(resolve => setTimeout(resolve, 5 * 1000));
             return api.unsendMessage(info.messageID);
           });
     }
-    if (typeof body === 'string' && body.startsWith(PREFIX) && (!APPROVED.includes(threadID) && !OPERATOR.includes(senderID) && !ADMINBOT.includes(senderID) && !OWNER.includes(senderID) && approval)) {
+    if (typeof body === 'string' && body.startsWith(PREFIX) && (!APPROVED.includes(threadID) && !OPERATOR.includes(senderID) && !ADMINBOT.includes(senderID) && approval)) {
       return api.sendMessage(notApproved, threadID, async (err, info) => {
             await new Promise(resolve => setTimeout(resolve, 5 * 1000));
             return api.unsendMessage(info.messageID);
           });
     }
-    if (command && (command.config.name.toLowerCase() === commandName.toLowerCase()) && (!ADMINBOT.includes(senderID) && !OPERATOR.includes(senderID) && !OWNER.includes(senderID) && adminOnly && senderID !== api.getCurrentUserID())) {
+    if (command && (command.config.name.toLowerCase() === commandName.toLowerCase()) && (!ADMINBOT.includes(senderID) && !OPERATOR.includes(senderID) && adminOnly && senderID !== api.getCurrentUserID())) {
       return api.sendMessage(replyAD, threadID, messageID);
     }
     if (typeof body === 'string' && body.startsWith(PREFIX) && (!ADMINBOT.includes(senderID) && adminOnly && senderID !== api.getCurrentUserID())) {
@@ -61,7 +61,7 @@ module.exports = function({ api, models, Users, Threads, Currencies }) {
 
 
     if (userBanned.has(senderID) || threadBanned.has(threadID) || allowInbox == ![] && senderID == threadID) {
-      if (!ADMINBOT.includes(senderID.toString()) && !OPERATOR.includes(senderID.toString())) && !OWNER.includes(senderID.toString()))
+      if (!ADMINBOT.includes(senderID.toString()) && !OPERATOR.includes(senderID.toString()))
       {
         if (command && (command.config.name.toLowerCase() === commandName.toLowerCase()) && userBanned.has(senderID)) {
           const { reason, dateAdded } = userBanned.get(senderID) || {};
@@ -109,7 +109,7 @@ module.exports = function({ api, models, Users, Threads, Currencies }) {
       }
     }
     if (commandBanned.get(threadID) || commandBanned.get(senderID)) {
-      if (!ADMINBOT.includes(senderID) && !OPERATOR.includes(senderID) && !OWNER.includes(senderID)) {
+      if (!ADMINBOT.includes(senderID) && !OPERATOR.includes(senderID)) {
         const banThreads = commandBanned.get(threadID) || [],
           banUsers = commandBanned.get(senderID) || [];
         if (banThreads.includes(command.config.name))
