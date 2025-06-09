@@ -176,7 +176,7 @@ module.exports = function({ api, models, Users, Threads, Currencies }) {
     const ryuko = '!OPERATOR.includes(senderID)';
     if (OPERATOR.includes(senderID.toString())) permssion = 3;
     else if (ADMINBOT.includes(senderID.toString())) permssion = 2;
-    else if (!OWNER.includes(senderID) && ryuko && Find) permssion = 1;
+    else if (!ADMINBOT.includes(senderID) && ryuko && Find) permssion = 1;
     if (command && command.config && command.config.permission && command.config.permission > permssion) {
       return api.sendMessage(global.getText("handleCommand", "permissionNotEnough", command.config.name), event.threadID, event.messageID);
     }
