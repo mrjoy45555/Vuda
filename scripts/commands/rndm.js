@@ -1,43 +1,191 @@
-const request = require("request");
-const fs = require("fs-extra");
+const axios = require('axios');
+const request = require('request');
+const fs = require('fs-extra');
+const path = require('path');
 
 module.exports.config = {
-  name: "random",
-  version: "0.0.2",
+  name: "rndm",
+  version: "6.9",
   permission: 0,
   prefix: true,
-  credits: "Nayan",
-  description: "sad video",
-  category: "admin",
-  usages: "",
+  credits: "Romeo",
+  description: "Random video database operations",
+  category: "user",
+  usages: "[=] or [name] or [help] or [add] or [remove]",
   cooldowns: 5,
+  dependencies: {
+    "axios": "",
+    "request": "",
+    "fs-extra": ""
+  }
 };
 
-module.exports.run = async function ({ api, event }) {
-  const axios = require("axios");
+
+
+module.exports.run = async function({ api, event, args }) {
+  
+  if (args[0]?.toLowerCase() === 'help') {
+    return api.sendMessage(
+      `📝 Random Video Commands:\n\n` +
+      `• ${global.config.PREFIX}rnd = - Get a random video\n` +
+      `• ${global.config.PREFIX}rnd [name] - Get a random video by name\n` +
+      `• ${global.config.PREFIX}rnd add [name] - Reply to a video to add it\n` +
+      `• ${global.config.PREFIX}rnd remove [id/url] - Remove a video`,
+      event.threadID,
+      event.messageID
+    );
+  }
 
   try {
-    const apis = await axios.get('https://raw.githubusercontent.com/MOHAMMAD-NAYAN-07/Nayan/main/api.json');
-    const n = apis.data.api;
+    
+    const apis = await axios.get('https://raw.githubusercontent.com/romeoislamrasel/romeobot/main/api.json');
+    const apiUrl = apis.data.api;
 
-    const res = await axios.get(`${n}/video/mixvideo`);
-    const { url: videoData, cp, length: ln } = res.data;
-    const { url: videoUrl, name } = videoData;
+    
+    if (args[0]?.toLowerCase() === 'add') {
+      if (args.length !== 2) {
+        return api.sendMessage(`Invalid number of arguments. Usage: Reply to a video then type ${global.config.PREFIX}rnd add [your name]`, event.threadID, event.messageID);
+      }
 
-    const filePath = __dirname + "/cache/video.mp4";
-    const file = fs.createWriteStream(filePath);
+      if (!event.messageReply || !event.messageReply.attachments || event.messageReply.attachments.length === 0) {
+        return api.sendMessage('Please reply to a video file.', event.threadID, event.messageID);
+      }
 
-    request(videoUrl)
-      .pipe(file)
-      .on("close", () => {
-        return api.sendMessage({
-          body: `${cp}\n\n𝐓𝐨𝐭𝐚𝐥 𝐕𝐢𝐝𝐞𝐨𝐬: [${ln}]\n𝐀𝐝𝐝𝐞𝐝 𝐓𝐡𝐢𝐬 𝐕𝐢𝐝𝐞𝐨 𝐓𝐨 𝐓𝐡𝐞 𝐀𝐩𝐢 𝐁𝐲 [${name}]`,
-          attachment: fs.createReadStream(filePath)
-        }, event.threadID, event.messageID);
+      const videoAttachments = event.messageReply.attachments.filter(att => att.type === 'video');
+      
+      if (videoAttachments.length === 0) {
+        return api.sendMessage('The reply must contain a video file.', event.threadID, event.messageID);
+      }
+
+      try {
+        const uploadedVideos = await Promise.all(videoAttachments.map(async (video) => {
+          try {
+            const encodedUrl = encodeURIComponent(video.url.replace(/\s/g, ''));
+            const imgurResult = await axios.get(`${apiUrl}/api/imgur?url=${encodedUrl}`);
+            if (!imgurResult.data.url) {
+              throw new Error('Failed to upload video to imgur');
+            }
+            return imgurResult.data.url;
+          } catch (error) {
+            console.error('Video upload error:', error);
+            throw new Error(`Failed to upload video: ${error.message}`);
+          }
+        }));
+
+        const name = args[1];
+        const res = await axios.get(`${apiUrl}/api/random/add?name=${encodeURIComponent(name)}&url=${encodeURIComponent(uploadedVideos.join('\n'))}`);
+
+        if (!res.data) {
+          throw new Error('No response from server');
+        }
+
+        let messageBody = `📩 Message: ${res.data.msg || 'Videos added successfully'}\n`;
+        if (res.data.data && res.data.data.id) {
+          messageBody += `🆔 ID: ${res.data.data.id}\n`;
+        }
+        messageBody += `📛 Name: ${name}\n\n📹 Videos Added:\n`;
+        
+        if (res.data.data && res.data.data.videos) {
+          res.data.data.videos.forEach((video, index) => {
+            messageBody += `\n${index + 1}. ID: ${video.id}\n   URL: ${video.url}\n`;
+          });
+        } else {
+          messageBody += uploadedVideos.map((url, index) => `\n${index + 1}. URL: ${url}`).join('\n');
+        }
+
+        return api.sendMessage(messageBody, event.threadID, event.messageID);
+      } catch (error) {
+        console.error('Command error:', error);
+        throw error;
+      }
+    }
+
+    
+    if (args[0]?.toLowerCase() === 'remove') {
+      if (args.length < 2) {
+        return api.sendMessage(`❌ Please provide an ID or URL. Usage: ${global.config.PREFIX}rnd remove [id/url]`, event.threadID, event.messageID);
+      }
+      
+      try {
+        const idOrUrl = args.slice(1).join(" ");
+        const res = await axios.get(`${apiUrl}/api/random/remove?id=${encodeURIComponent(idOrUrl)}&key=romeo`);
+        
+        let message = res.data.msg || "✅ Video removed successfully\n";
+        if (res.data.removed) {
+          message += `\n📌 Details:\n` +
+                    `• ID: ${res.data.removed.id}\n` +
+                    `• Name: ${res.data.removed.name}\n` +
+                    `• URL: ${res.data.removed.url}\n`;
+        }
+        
+        return api.sendMessage(message, event.threadID, event.messageID);
+      } catch (error) {
+        throw error;
+      }
+    }
+
+   
+    try {
+      const name = args[0] === '=' ? '' : args.join(" ");
+      const url = `${apiUrl}/api/random${name ? `?name=${encodeURIComponent(name)}` : ''}`;
+
+      const res = await axios.get(url);
+      const { data } = res.data;
+      const { name: videoName, cp, length, url: videoUrl } = data;
+
+      if (!videoUrl) {
+        throw new Error("No video URL received from API");
+      }
+
+      const filePath = path.join(__dirname, "cache", "video.mp4");
+      const file = fs.createWriteStream(filePath);
+
+      return new Promise((resolve, reject) => {
+        request(videoUrl)
+          .pipe(file)
+          .on("error", (err) => {
+            console.error("Error downloading video:", err);
+            reject(new Error("Failed to download video"));
+          })
+          .on("close", async () => {
+            try {
+              if (!fs.existsSync(filePath)) {
+                throw new Error("Video file was not created");
+              }
+
+              const fileSize = fs.statSync(filePath).size;
+              if (fileSize === 0) {
+                throw new Error("Downloaded video file is empty");
+              }
+
+              let message = cp || "Random video";
+              if (videoName) message += `\n\n📛 Name: ${videoName}`;
+              message += `\n📹 Total Videos: ${length}`;
+
+              await api.sendMessage({
+                body: message,
+                attachment: fs.createReadStream(filePath)
+              }, event.threadID, event.messageID);
+              
+              resolve();
+            } catch (err) {
+              console.error("Error sending message:", err);
+              reject(err);
+            } finally {
+              try {
+                fs.unlinkSync(filePath);
+              } catch (err) {
+                console.error("Error cleaning up file:", err);
+              }
+            }
+          });
       });
+    } catch (error) {
+      throw error;
+    }
 
-  } catch (e) {
-    console.log(e);
-    return api.sendMessage("Failed to fetch video. Please try again later.", event.threadID, event.messageID);
+  } catch (error) {
+    console.error('Random command error:', error);
+    return api.sendMessage(`❌ An error occurred: ${error.message}`, event.threadID, event.messageID);
   }
 };
